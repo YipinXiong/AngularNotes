@@ -8,7 +8,23 @@
 - Property binding `[ ]`
 - Event binding `( )`
 
+## Two-way bing
 
+```html
+<div>
+  <label>name:
+    <input [(ngModel)]="hero.name" placeholder="name"/>
+  </label>
+</div>
+```
+
+**[(ngModel)]** is Angular's two-way data binding syntax.
+
+Here it binds the `hero.name` property to the HTML textbox so that data can flow *in both directions:* from the `hero.name` property to the textbox, and from the textbox back to the `hero.name`.
+
+> Although `ngModel` is a valid Angular directive, it isn't available by default.
+>
+> It belongs to the optional `FormsModule` and you must *opt-in* to using it.
 
 # Components
 
@@ -51,6 +67,18 @@ export class ProductAlertsComponent {
   @Input() product;
   @Output() notify = new EventEmitter();
 }
+```
+
+
+
+
+
+# Pipes
+
+[Pipes](https://angular.io/guide/pipes) are a good way to format strings, currency amounts, dates and other display data. Angular ships with several built-in pipes and you can create your own.
+
+```html
+<h2>{{hero.name | uppercase}} Details</h2>
 ```
 
 
@@ -153,6 +181,86 @@ Angular distinguishes components from services to **increase modularity and reus
 
 
 
+## Httpclient
+
+An alternative to Axios in Angular
+
+
+
+
+
+# Forms in Angular
+
+There are two parts to an Angular Reactive form, the objects that live in the component to store and manage the form, and the visualization of the form that lives in the template.
+
+
+
+Similarily, forms in Augular should be controlled by developers as React does.
+
+
+
+```typescript
+// There is a built-in package of form-controll in Angular, a service called "FormBuilder".
+
+export class CartComponent {
+  items;
+  checkoutForm;
+
+  constructor(
+    private cartService: CartService,
+    private formBuilder: FormBuilder,
+  ) {
+    this.items = this.cartService.getItems();
+
+    this.checkoutForm = this.formBuilder.group({
+      name: '',
+      address: ''
+    });
+  }
+}
+```
+
+
+
+
+
+```html
+<!-- Use a formGroup property binding to bind the checkoutForm to the form tag in the template. Also include a "Purchase" button to submit the form. -->
+
+<h3>Cart</h3>
+
+<p>
+  <a routerLink="/shipping">Shipping Prices</a>
+</p>
+
+<div class="cart-item" *ngFor="let item of items">
+  <span>{{ item.name }} </span>
+  <span>{{ item.price | currency }}</span>
+</div>
+
+<form [formGroup]="checkoutForm" (ngSubmit)="onSubmit(checkoutForm.value)">
+
+  <div>
+    <label for="name">
+      Name
+    </label>
+    <input id="name" type="text" formControlName="name">
+  </div>
+
+  <div>
+    <label for="address">
+      Address
+    </label>
+    <input id="address" type="text" formControlName="address">
+  </div>
+
+  <button class="button" type="submit">Purchase</button>
+
+</form>
+```
+
+
+
 # Typescript
 
 [typescript in 5 minutes](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html)
@@ -160,3 +268,13 @@ Angular distinguishes components from services to **increase modularity and reus
 # Self-relfection
 
 In Angualr, it uses `directives` to change the default behaviors of html tags.
+
+
+
+In Angualr, you need to take advantage of decoraters(@) to configure your application. Some component level metadata is configured via `@Component`. The most important `@NgModule` decorator annotates the top-level **AppModule** class.
+
+> Angular needs to know how the pieces of your application fit together and what other files and libraries the app requires. This information is called *metadata*.
+>
+> Some of the metadata is in the `@Component` decorators that you added to your component classes. Other critical metadata is in [`@NgModule`](https://angular.io/guide/ngmodules) decorators.
+>
+> The Angular CLI generated an `AppModule` class in `src/app/app.module.ts` when it created the project.

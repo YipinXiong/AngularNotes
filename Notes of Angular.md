@@ -8,6 +8,10 @@
 - Property binding `[ ]`
 - Event binding `( )`
 
+## Architecture Overview
+
+![architecture](Notes of Angular.assets/image-20191120141822822.png)
+
 ## Two-way binding
 
 ```html
@@ -33,26 +37,20 @@ Here it binds the `hero.name` property to the HTML textbox so that data can flow
 ```typescript
 (click)="myFunction()"      
 (dblclick)="myFunction()"   
-
 (submit)="myFunction()"
-
 (blur)="myFunction()"  
 (focus)="myFunction()" 
-
 (scroll)="myFunction()"
-
 (cut)="myFunction()"
 (copy)="myFunction()"
 (paste)="myFunction()"
-
 (keyup)="myFunction()"
 (keypress)="myFunction()"
 (keydown)="myFunction()"
-
+(input)? where is it from?
 (mouseup)="myFunction()"
 (mousedown)="myFunction()"
 (mouseenter)="myFunction()"
-
 (drag)="myFunction()"
 (drop)="myFunction()"
 (dragover)="myFunction()"
@@ -123,6 +121,27 @@ You define private styles either inline in the `@Component.styles` array or as s
 
 
 
+## Data binding
+
+![Four ways of data binding](Notes of Angular.assets/image-20191120154527427.png)
+
+
+
+## Directives
+
+here are two other kinds of directives: *structural* and *attribute*. In templates, directives typically appear within an element tag as attributes, either by name or as the target of an assignment or a binding.
+
+### Structural directives
+
+*Structural directives* alter layout by adding, removing, and replacing elements in the DOM. 
+
+- `*ngFor`
+- `*ngIf`
+
+### Attribute directives
+
+*Attribute directives* alter the appearance or behavior of an existing element. In templates they look like regular HTML attributes, hence the name.
+
 # NgModule
 
 Every component must be declared in *exactly one* [NgModule](https://angular.io/guide/ngmodules).
@@ -137,9 +156,23 @@ Open `src/app/app.module.ts` and find `HeroesComponent` imported near the top.
 
 [Pipes](https://angular.io/guide/pipes) are a good way to format strings, currency amounts, dates and other display data. Angular ships with several built-in pipes and you can create your own.
 
+> Note that the `pipes` here mean the "small directives" used in interpolation to handle string etc. 
+>
+> In `Observable` section, there is another concept called `pipe`, which combines several operations working on the value returned from observable. 
+
 ```html
 <h2>{{hero.name | uppercase}} Details</h2>
 ```
+
+## AsyncPipe
+
+```html
+<li *ngFor="let hero of heroes$ | async" >
+```
+
+> The `*ngFor` repeats hero objects. Notice that the `*ngFor` iterates over a list called `heroes$`, not `heroes`. The `$` is a convention that indicates `heroes$` is an `Observable`, not an array.
+
+Since `*ngFor` can't do anything with an `Observable`, use the pipe character (`|`) followed by `async`. This identifies Angular's `AsyncPipe` and subscribes to an `Observable` automatically so you won't have to do so in the component class.
 
 # Routing
 
@@ -271,6 +304,8 @@ Services are the place where you share data between parts of your application. R
 >
 > That means that if you need to reference some data in a service in your template, you must declare the service as `public` in the constructor.
 
+You can communicate with components with service
+
 ## Motivation
 
 Angular distinguishes components from services to **increase modularity and reusability** by separating a component's view-related functionality from other kinds of processing. A component can delegate certain tasks to services, such as fetching data from the server, validating user input, or logging directly to the console. By defining such processing tasks in an *injectable service class*, you make those tasks available to any component. You can also make your app more adaptable by injecting different providers of the same kind of service, as appropriate in different circumstances.
@@ -297,11 +332,11 @@ An alternative to Axios in Angular
 
 
 
-## Observable
+# Observable
 
 A substitude to `Promise` in Angular.
 
-To catch errors, you **"pipe" the observable** result from `http.get()` through an RxJS `catchError()` operator.
+To catch errors, you **"pipe" the observable** result from `http.get()` through an RxJS `catchError()` operator. "Pipe" chains many operations one by one.
 
 `tap()` operator, which looks at the observable values, does something with those values, and passes them along. The `tap()` call back doesn't touch the values themselves.
 
@@ -311,12 +346,59 @@ getHeroes (): Observable<Hero[]> {
   return this.http.get<Hero[]>(this.heroesUrl)
     .pipe(
       tap(_ => this.log('fetched heroes')),
-      catchError(this.handleError<Hero[]>('getHeroes', []))
+      catchError(this.handleError<Hero[]>('getHeroes', [])),
     );
 }
+
+const heroes = [{ name: 's', name: 'b' }];
+heroes.map(hero => hero.name);
 ```
 
 `pipe` is similar to `promise` => then, then. That means that the value you get from the url will be **used**, **modified** during the data passing (`pipe`) process. 
+
+> You can "dispatch" the action into a observerable, such as adding a new activitiy. Then, it will update for you automatically.
+
+I have to say, observable is a "stream". There is another dimension called "time". As time goes by,  there will probably be many values coming into the "stream". 
+
+## Laziness
+
+If you neglect to `subscribe()`, the service will not send the request to the server. As a rule, an `Observable` *does nothing* until something subscribes.
+
+
+
+## Subject
+
+A `Subject` is both a source of observable values and an `Observable` itself. You can subscribe to a `Subject` as you would any `Observable`. You can also push values into that `Observable` by calling its `next(value)` method as the `search()` method does.
+
+```java
+private searchTerms = new Subject<string>();
+
+// Push a search term into the observable stream.
+search(term: string): void {
+  this.searchTerms.next(term);
+}
+
+this.heroes$ = this.searchTerms.pipe(
+  // wait 300ms after each keystroke before considering the term
+  debounceTime(300),
+
+  // ignore new term if same as previous term
+  distinctUntilChanged(),
+
+  // switch to new search observable each time the term changes
+  switchMap((term: string) => this.heroService.searchHeroes(term)),
+);
+```
+
+Each operator works as follows:
+
+- `debounceTime(300)` waits until the flow of new string events pauses for 300 milliseconds before passing along the latest string. You'll never make requests more frequently than 300ms.
+
+- `distinctUntilChanged()` ensures that a request is sent only if the filter text changed.
+
+- `switchMap()` calls the search service for each search term that makes it through `debounce()` and `distinctUntilChanged()`. It cancels and discards previous search observables, returning only the latest search service observable.
+
+  > `switchMap()` preserves the original request order while returning only the observable from the most recent HTTP method call. Results from prior calls are canceled and discarded.
 
 # Forms in Angular
 
@@ -325,8 +407,6 @@ There are two parts to an Angular Reactive form, the objects that live in the co
 
 
 Similarily, forms in Augular should be controlled by developers as React does.
-
-
 
 ```typescript
 // There is a built-in package of form-controll in Angular, a service called "FormBuilder".
@@ -348,8 +428,6 @@ export class CartComponent {
   }
 }
 ```
-
-
 
 
 
@@ -388,13 +466,35 @@ export class CartComponent {
 </form>
 ```
 
+## Ref input's value within the same component.html
 
+```html
+<div>
+  <label>Hero name:
+    <input #heroName />
+  </label>
+  <!-- (click) passes input value to add() and then clears the input -->
+  <button (click)="add(heroName.value); heroName.value=''">
+    add
+  </button>
+</div>
+```
+
+Use **#** to reference the dom?
 
 # Typescript
 
 [typescript in 5 minutes](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html)
 
-# Self-relfection
+
+
+# RxJS
+
+[Introduction to RxJS](https://www.youtube.com/watch?v=ei7FsoXKPl0)
+
+[Visualization of RxJS](https://rxmarbles.com/#race)
+
+# Self-comments
 
 In Angualr, it uses `directives` to change the default behaviors of html tags.
 
@@ -407,3 +507,6 @@ In Angualr, you need to take advantage of decoraters(@) to configure your applic
 > Some of the metadata is in the `@Component` decorators that you added to your component classes. Other critical metadata is in [`@NgModule`](https://angular.io/guide/ngmodules) decorators.
 >
 > The Angular CLI generated an `AppModule` class in `src/app/app.module.ts` when it created the project.
+
+Decoraters are used to inform Angular of what part of this `class` belongs to.  
+

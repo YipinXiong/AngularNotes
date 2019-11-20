@@ -296,7 +296,7 @@ export class ProductDetailsComponent implements OnInit {
 
 Services are the place where you share data between parts of your application. Removing data access from components means you can change your mind about the implementation anytime, without touching any components. They don't know how the service works.
 
-> Notice that the new service imports the Angular `Injectable` symbol and annotates the class with the `@Injectable()` decorator. This marks the class as one that participates in the *dependency injection system*.
+> Notice that the new service imports the Angular `Injectable` symbol and annotates the class with the `@Injectable()` decorator. This marks the class as one that participates in the *dependency injection system*. 
 
 [Introduction to services and dependency injection](https://angular.io/guide/architecture-services#introduction-to-services-and-dependency-injection)
 
@@ -326,9 +326,75 @@ By default, the Angular CLI command `ng generate service` registers a provider w
 
 
 
-## Httpclient
+# Dependency injection (DI)
 
-An alternative to Axios in Angular
+You can *inject* a service into a component, giving the component access to that service class.
+
+Some important terminologies of DI:
+
+- The *injector* is the main mechanism. **Angular creates an application-wide injector for you during the bootstrap process, and additional injectors as needed. You don't have to create injectors**.
+- An injector creates dependencies, and maintains a *container* of dependency instances that it reuses if possible.
+- A *provider* is an object that tells an injector how to obtain or create a dependency.
+
+> For any dependency that you need in your app, you must register a provider with the app's injector, so that the injector can use the provider to create new instances. For a service, the provider is typically the service class itself.
+
+
+
+When Angular creates a new instance of a component class, it determines which services or other dependencies that component needs by looking at the constructor parameter types. For example, the constructor of `HeroListComponent` needs `HeroService`.
+
+```java
+constructor(private service: HeroService) { }		
+```
+
+When Angular discovers that a component depends on a service, it first checks if the injector has any existing instances of that service. If a requested service instance doesn't yet exist, the injector makes one using the registered provider, and adds it to the injector before returning the service to Angular.
+
+When all requested services have been resolved and returned, Angular can call the component's constructor with those services as arguments.
+
+The process of `HeroService` injection looks something like this.
+
+![Injector](Notes of Angular.assets/injector-injects.png)
+
+## Providing services
+
+You must register at least one *provider* of any service you are going to use. The provider can be part of the service's own metadata, making that service available everywhere, or you can register providers with specific modules or components. You register providers in the metadata of the service (in the `@Injectable()` decorator), or in the `@NgModule()` or `@Component()` metadata
+
+- By default, the Angular CLI command [`ng generate service`](https://angular.io/cli/generate) registers a provider with the root injector for your service by including provider metadata in the `@Injectable()` decorator. 
+
+  ```typescript
+  @Injectable({
+   providedIn: 'root',
+  })
+  ```
+
+  When you provide the service at the root level, Angular creates a single, shared instance of `HeroService` and injects it into any class that asks for it. Registering the provider in the `@Injectable()` metadata also allows Angular to optimize an app by removing the service from the compiled app if it isn't used.
+
+- When you register a provider with a [specific NgModule](https://angular.io/guide/architecture-modules), the same instance of a service is available to all components in that NgModule. To register at this level, use the `providers` property of the `@NgModule()` decorator 
+
+  ```typescript
+  @NgModule({
+    providers: [
+    BackendService,
+    Logger
+   ],
+   ...
+  })
+  ```
+
+- When you register a provider at the component level, you get a new instance of the service with each new instance of that component. At the component level, register a service provider in the `providers` property of the `@Component()` metadata.
+
+  ```typescript
+  @Component({
+    selector:    'app-hero-list',
+    templateUrl: './hero-list.component.html',
+    providers:  [ HeroService ]
+  })
+  ```
+
+
+
+> In short, you can declare the service globally or modulely or locally.
+
+
 
 
 
@@ -399,6 +465,10 @@ Each operator works as follows:
 - `switchMap()` calls the search service for each search term that makes it through `debounce()` and `distinctUntilChanged()`. It cancels and discards previous search observables, returning only the latest search service observable.
 
   > `switchMap()` preserves the original request order while returning only the observable from the most recent HTTP method call. Results from prior calls are canceled and discarded.
+
+  ## Httpclient
+
+  An alternative to Axios in Angular
 
 # Forms in Angular
 

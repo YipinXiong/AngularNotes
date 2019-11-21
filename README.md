@@ -146,11 +146,7 @@ here are two other kinds of directives: *structural* and *attribute*. In templat
 
 Every component must be declared in *exactly one* [NgModule](https://angular.io/guide/ngmodules).
 
-*You* didn't declare the `HeroesComponent`. So why did the application work?
-
-It worked because the Angular CLI declared `HeroesComponent` in the `AppModule` when it generated that component.
-
-Open `src/app/app.module.ts` and find `HeroesComponent` imported near the top.
+*You* didn't declare the `HeroesComponent`. So why did the application work? It worked because the Angular CLI declared `HeroesComponent` in the `AppModule` when it generated that component. Open `src/app/app.module.ts` and find `HeroesComponent` imported near the top.
 
 # Pipes
 
@@ -294,7 +290,7 @@ export class ProductDetailsComponent implements OnInit {
 }
 ```
 
-Services are the place where you share data between parts of your application. Removing data access from components means you can change your mind about the implementation anytime, without touching any components. They don't know how the service works.
+**Services are the place where you share data between parts of your application.** Removing data access from components means you can change your mind about the implementation anytime, without touching any components. They don't know how the service works.
 
 > Notice that the new service imports the Angular `Injectable` symbol and annotates the class with the `@Injectable()` decorator. This marks the class as one that participates in the *dependency injection system*. 
 
@@ -302,9 +298,9 @@ Services are the place where you share data between parts of your application. R
 
 >  Angular only binds to *public* component properties. 
 >
-> That means that if you need to reference some data in a service in your template, you must declare the service as `public` in the constructor.
-
-You can communicate with components with service
+>  That means that if you need to reference some data in a service in your template, you must declare the service as `public` in the constructor. 
+>
+>  To put it more simplely, if you need to use data from services in the template, you must declare the services as `public` in the constructor. 
 
 ## Motivation
 
@@ -336,7 +332,7 @@ Some important terminologies of DI:
 - An injector creates dependencies, and maintains a *container* of dependency instances that it reuses if possible.
 - A *provider* is an object that tells an injector how to obtain or create a dependency.
 
-> For any dependency that you need in your app, you must register a provider with the app's injector, so that the injector can use the provider to create new instances. For a service, the provider is typically the service class itself.
+> For any dependency that you need in your app, you must register a provider with the app's injector, so that the injector can use the provider to create new instances. **For a service, the provider is typically the service class itself.**
 
 
 
@@ -400,7 +396,98 @@ You must register at least one *provider* of any service you are going to use. T
 
 # Observable
 
-A substitude to `Promise` in Angular.
+## Basic usage and terms
+
+As a publisher, you create an `Observable` instance that defines a *subscriber* function. This is the function that is executed when a consumer calls the `subscribe()` method. The subscriber function defines how to obtain or generate values or messages to be published.
+
+To execute the observable you have created and begin receiving notifications, you call its `subscribe()` method, passing an *observer*. This is a JavaScript object that defines the handlers for the notifications you receive. The `subscribe()` call returns a `Subscription` object that has an `unsubscribe()` method, which you call to stop receiving notifications.
+
+Here's an example that demonstrates the basic usage model by showing how an observable could be used to provide geolocation updates.
+
+```typescript
+// Create an Observable that will start listening to geolocation updates
+// when a consumer subscribes.
+const locations = new Observable((observer) => {
+  // Get the next and error callbacks. These will be passed in when
+  // the consumer subscribes.
+  const {next, error} = observer;
+  let watchId;
+
+  // Simple geolocation API check provides values to publish
+  if ('geolocation' in navigator) {
+    watchId = navigator.geolocation.watchPosition(next, error);
+  } else {
+    error('Geolocation not available');
+  }
+
+  // When the consumer unsubscribes, clean up data ready for next subscription.
+  return {unsubscribe() { navigator.geolocation.clearWatch(watchId); }};
+});
+
+// Call subscribe() to start listening for updates.
+const locationsSubscription = locations.subscribe({
+  next(position) { console.log('Current Position: ', position); },
+  error(msg) { console.log('Error Getting Location: ', msg); }
+});
+
+// Stop listening for location after 10 seconds
+setTimeout(() => { locationsSubscription.unsubscribe(); }, 10000);
+```
+
+## Observers
+
+A handler for receiving observable notifications implements the `Observer` interface. It is no more than an object that defines callback methods to handle the three types of notifications that an observable can send:
+
+| Notification Type | Description                                                  |
+| :---------------- | ------------------------------------------------------------ |
+| next              | **Required.** A handler for each delivered value. Called zero or more times after execution starts. |
+| error             | **Optional**. A handler for an error notification. An error halts execution of the observable instance. |
+| complete          | **Optional.** A handler for the execution-complete notification. Delayed values can continue to be delivered to the next handler after execution is complete. |
+
+
+
+## Laziness
+
+If you neglect to `subscribe()`, the service will not send the request to the server. As a rule, an `Observable` *does nothing* until something subscribes.
+
+## Subscribing
+
+You subscribe by calling the `subscribe()` method of the instance, passing an observer object to receive the notifications.
+
+> There is a constructor that you use to create new instances, but for illustration, we can use some methods from the RxJS library that create simple observables of frequently used types:
+>
+> - `of(...items)`—Returns an `Observable` instance that synchronously delivers the values provided as arguments.
+> - `from(iterable)`—Converts its argument to an `Observable` instance. This method is commonly used to convert an array to an observable.
+
+In angular, you can use it as inline functions:
+
+```typescript
+myObservable.subscribe(
+  x => console.log('Observer got a next value: ' + x),
+  err => console.error('Observer got an error: ' + err),
+  () => console.log('Observer got a complete notification')
+);
+```
+
+
+
+## Multicasting
+
+A typical observable creates a new, independent execution for each subscribed observer. *Multicasting* is the practice of broadcasting to a list of multiple subscribers in a single execution. With a multicasting observable, re-use the first listener and send values out to each subscriber. When creating an observable you should determine how you want that observable to be used and whether or not you want to multicast its values.
+
+For more details, please visit the official document of Angular website.
+
+
+
+
+
+## Common operators in RxJS
+
+Note that, for Angular apps, we prefer combining operators with pipes, rather than chaining. Chaining is used in many RxJS examples.
+
+## A concrete instance
+
+>  A substitude to `Promise` in Angular.
 
 To catch errors, you **"pipe" the observable** result from `http.get()` through an RxJS `catchError()` operator. "Pipe" chains many operations one by one.
 
@@ -424,13 +511,7 @@ heroes.map(hero => hero.name);
 
 > You can "dispatch" the action into a observerable, such as adding a new activitiy. Then, it will update for you automatically.
 
-I have to say, observable is a "stream". There is another dimension called "time". As time goes by,  there will probably be many values coming into the "stream". 
-
-## Laziness
-
-If you neglect to `subscribe()`, the service will not send the request to the server. As a rule, an `Observable` *does nothing* until something subscribes.
-
-
+>  Observable is a "stream". There is another dimension called "time". As time goes by,  there will probably be many values flowing into the "stream". 
 
 ## Subject
 
@@ -466,20 +547,29 @@ Each operator works as follows:
 
   > `switchMap()` preserves the original request order while returning only the observable from the most recent HTTP method call. Results from prior calls are canceled and discarded.
 
-  ## Httpclient
+  ## Compared to other techniques
 
+  [](https://angular.io/guide/comparing-observables)
+  
+  ## Httpclient
+  
   An alternative to Axios in Angular
 
 # Forms in Angular
 
 There are two parts to an Angular Reactive form, the objects that live in the component to store and manage the form, and the visualization of the form that lives in the template.
 
+Both reactive and template-driven forms share underlying building blocks.
+
+- `FormControl` tracks the value and validation status of an individual form control.
+- `FormGroup` tracks the same values and status for a collection of form controls.
+- `FormArray` tracks the same values and status for an array of form controls.
+- `ControlValueAccessor` creates a bridge between Angular `FormControl` instances and native DOM elements.
 
 
-Similarily, forms in Augular should be controlled by developers as React does.
 
 ```typescript
-// There is a built-in package of form-controll in Angular, a service called "FormBuilder".
+// There is a built-in package of form-control in Angular, a service called "FormBuilder".
 
 export class CartComponent {
   items;
@@ -487,7 +577,7 @@ export class CartComponent {
 
   constructor(
     private cartService: CartService,
-    private formBuilder: FormBuilder,
+    private formBuilder: FormBuilder
   ) {
     this.items = this.cartService.getItems();
 
@@ -536,7 +626,7 @@ export class CartComponent {
 </form>
 ```
 
-## Ref input's value within the same component.html
+## Ref input's value 
 
 ```html
 <div>
@@ -551,6 +641,56 @@ export class CartComponent {
 ```
 
 Use **#** to reference the dom?
+
+
+
+## Reactive Form
+
+*Reactive forms* provide a model-driven approach to handling form inputs whose values change over time.
+
+> With reactive forms, the **`FormControl` instance** always returns a new value when the control's value is updated. (Immutable)
+
+```typescript
+import { Component } from '@angular/core';
+import { FormControl } from '@angular/forms';
+
+@Component({
+  selector: 'app-reactive-favorite-color',
+  template: `
+    Favorite Color: <input type="text" [formControl]="favoriteColorControl">
+  `
+})
+export class FavoriteColorComponent {
+  favoriteColorControl = new FormControl('');
+}
+```
+
+In reactive forms, the form model is [the source of truth](https://en.wikipedia.org/wiki/Single_source_of_truth). In the example above, the form model is the `FormControl` instance.
+
+### Data flow 
+
+As described above, in reactive forms each form element in the view is directly linked to a form model (`FormControl` instance). Updates from the view to the model and from the model to the view are synchronous and aren't dependent on the UI rendered. 
+
+![data-flow-reactive-form](README.assets/dataflow-reactive-forms-vtm.png)
+
+#### from view to model.
+
+1. The user types a value into the input element, in this case the favorite color *Blue*.
+2. The form input element emits an "input" event with the latest value.
+3. The control value accessor listening for events on the form input element immediately relays the new value to the `FormControl` instance.
+4. The `FormControl` instance emits the new value through the `valueChanges` observable.
+5. Any subscribers to the `valueChanges` observable receive the new value.
+
+![Reactive forms data flow - model to view](README.assets/dataflow-reactive-forms-mtv.png)
+
+#### from model to view.
+
+1. The user calls the `favoriteColorControl.setValue()` method, which updates the `FormControl` value.
+2. The `FormControl` instance emits the new value through the `valueChanges` observable.
+3. Any subscribers to the `valueChanges` observable receive the new value.
+4. The control value accessor on the form input element updates the element with the new value.
+
+> Differentiate the model to view and view to model because you need to consider other components who subscribe the "change" observable, that is formControl. 
 
 # Typescript
 

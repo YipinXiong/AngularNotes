@@ -74,7 +74,7 @@ Components shouldn't fetch or save data directly and they certainly shouldn't kn
 
 ## Input
 
-Parent components pass their information to child components via `property`
+Parent components pass their information to child components via `property`. Either way, the `@Input` decorator tells Angular that this property is *public* and available for binding by a parent component. Without `@Input`, Angular refuses to bind to the property.
 
 
 
@@ -129,11 +129,17 @@ You define private styles either inline in the `@Component.styles` array or as s
 
 ## Directives
 
-here are two other kinds of directives: *structural* and *attribute*. In templates, directives typically appear within an element tag as attributes, either by name or as the target of an assignment or a binding.
+We integrate the operations about DOM into `directives`. Here are two other kinds of directives: *structural* and *attribute*. In templates, directives typically appear within an element tag as attributes, either by name or as the target of an assignment or a binding.
+
+> You can apply many *attribute* directives to one host element. You can [only apply one](https://angular.io/guide/structural-directives#one-per-element) *structural* directive to a host element.
+>
+> ?
+>
+> from Angular - documentation 
 
 ### Structural directives
 
-*Structural directives* alter layout by adding, removing, and replacing elements in the DOM. 
+*Structural directives* are responsible for HTML layout. They shape or reshape the DOM's *structure*, typically by adding, removing, or manipulating elements.
 
 - `*ngFor`
 - `*ngIf`
@@ -141,6 +147,58 @@ here are two other kinds of directives: *structural* and *attribute*. In templat
 ### Attribute directives
 
 *Attribute directives* alter the appearance or behavior of an existing element. In templates they look like regular HTML attributes, hence the name.
+
+The `@Directive` decorator's lone configuration property specifies the directive's [CSS attribute selector](https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors), `[appHighlight]`.
+
+You use the `ElementRef` in the directive's constructor to [inject](https://angular.io/guide/dependency-injection) a reference to the host DOM element, the element to which you applied `appHighlight`. `ElementRef` grants direct access to the host DOM element through its `nativeElement` property.
+
+```typescript
+import { Directive, ElementRef, HostListener, Input } from '@angular/core';
+
+@Directive({
+  selector: '[appHighlight]'
+})
+export class HighlightDirective {
+
+  constructor(private el: ElementRef) { }
+
+  @Input('appHighlight') highlightColor: string;
+
+  @HostListener('mouseenter') onMouseEnter() {
+    this.highlight(this.highlightColor || 'red');
+  }
+
+  @HostListener('mouseleave') onMouseLeave() {
+    this.highlight(null);
+  }
+
+  private highlight(color: string) {
+    this.el.nativeElement.style.backgroundColor = color;
+  }
+}
+```
+
+The `@HostListener` decorator lets you subscribe to events of the DOM element that hosts an attribute directive, the `<p>` in this case.
+
+### @input
+
+```typescript
+@Input('appHighlight') highlightColor: string;
+```
+
+*Inside* the directive the property is known as `highlightColor`. *Outside* the directive, where you bind to it, it's known as `appHighlight`.
+
+You can also add another property in the same `directive` 
+
+Angular knows that the `defaultColor` binding belongs to the `HighlightDirective` because you made it *public* with the `@Input` decorator.
+
+
+
+## Dynamic Components
+
+The `<ng-template>` element is a good choice for dynamic components because it doesn't render any additional output.
+
+
 
 # NgModule
 
@@ -549,7 +607,7 @@ Each operator works as follows:
 
   ## Compared to other techniques
 
-  [](https://angular.io/guide/comparing-observables)
+  [compare to other techniques](https://angular.io/guide/comparing-observables)
   
   ## Httpclient
   
@@ -562,69 +620,33 @@ There are two parts to an Angular Reactive form, the objects that live in the co
 Both reactive and template-driven forms share underlying building blocks.
 
 - `FormControl` tracks the value and validation status of an individual form control.
+
+  > Personally speaking, every input value is an instance of FormControl.
+
 - `FormGroup` tracks the same values and status for a collection of form controls.
+
+  > Just as a form control instance gives you control over a single input field, a form group instance tracks the form state of a group of form control instances (for example, a form)
+
+  ```html
+  <form [formGroup]="profileForm">
+    <label>
+      First Name:
+      <input type="text" formControlName="firstName">
+    </label>
+    <label>
+      Last Name:
+      <input type="text" formControlName="lastName">
+    </label>
+  </form>
+  ```
+
+  Note that just as a form group contains a group of controls, the *profile form* `FormGroup` is bound to the `form` element with the `FormGroup` directive, creating a communication layer between the model and the form containing the inputs. The `formControlName` input provided by the `FormControlName` directive binds each individual input to the form control defined in `FormGroup`. The form controls communicate with their respective elements. They also communicate changes to the form group instance, which provides the source of truth for the model value.
+
 - `FormArray` tracks the same values and status for an array of form controls.
+
 - `ControlValueAccessor` creates a bridge between Angular `FormControl` instances and native DOM elements.
 
 
-
-```typescript
-// There is a built-in package of form-control in Angular, a service called "FormBuilder".
-
-export class CartComponent {
-  items;
-  checkoutForm;
-
-  constructor(
-    private cartService: CartService,
-    private formBuilder: FormBuilder
-  ) {
-    this.items = this.cartService.getItems();
-
-    this.checkoutForm = this.formBuilder.group({
-      name: '',
-      address: ''
-    });
-  }
-}
-```
-
-
-
-```html
-<!-- Use a formGroup property binding to bind the checkoutForm to the form tag in the template. Also include a "Purchase" button to submit the form. -->
-
-<h3>Cart</h3>
-
-<p>
-  <a routerLink="/shipping">Shipping Prices</a>
-</p>
-
-<div class="cart-item" *ngFor="let item of items">
-  <span>{{ item.name }} </span>
-  <span>{{ item.price | currency }}</span>
-</div>
-
-<form [formGroup]="checkoutForm" (ngSubmit)="onSubmit(checkoutForm.value)">
-
-  <div>
-    <label for="name">
-      Name
-    </label>
-    <input id="name" type="text" formControlName="name">
-  </div>
-
-  <div>
-    <label for="address">
-      Address
-    </label>
-    <input id="address" type="text" formControlName="address">
-  </div>
-
-  <button class="button" type="submit">Purchase</button>
-
-</form>
-```
 
 ## Ref input's value 
 
@@ -691,6 +713,129 @@ As described above, in reactive forms each form element in the view is directly 
 4. The control value accessor on the form input element updates the element with the new value.
 
 > Differentiate the model to view and view to model because you need to consider other components who subscribe the "change" observable, that is formControl. 
+
+
+
+### Creating nested form groups
+
+Using a nested form group instance allows you to break large forms groups into smaller, more manageable ones. *Form groups can accept both form control and form group instances as children.* 
+
+```typescript
+import { Component } from '@angular/core';
+import { FormGroup, FormControl } from '@angular/forms';
+
+@Component({
+  selector: 'app-profile-editor',
+  templateUrl: './profile-editor.component.html',
+  styleUrls: ['./profile-editor.component.css']
+})
+export class ProfileEditorComponent {
+  profileForm = new FormGroup({
+    firstName: new FormControl(''),
+    lastName: new FormControl(''),
+    address: new FormGroup({
+      street: new FormControl(''),
+      city: new FormControl(''),
+      state: new FormControl(''),
+      zip: new FormControl('')
+    })
+  });
+}
+```
+
+Even though the `address` element in the form group is a child of the overall `profileForm` element in the form group, the same rules apply with value and status changes. Changes in status and value from the nested form group **propagate to the parent form group**, maintaining consistency with the overall model.
+
+### Partial model updates
+
+There are two ways to update the model value:
+
+- Use the `setValue()` method to set a new value for an individual control. The `setValue()` method strictly adheres to the structure of the form group and replaces the entire value for the control.
+- Use the `patchValue()` method to replace any properties defined in the object that have changed in the form model.
+
+### FormBuilder - Service
+
+The `FormBuilder` service has three methods: `control()`, `group()`, and `array()`. These are factory methods for generating instances in your component classes including form controls, form groups, and form arrays. Use the `group` method to create the `profileForm` controls.
+
+```typescript
+import { Component } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
+
+@Component({
+  selector: 'app-profile-editor',
+  templateUrl: './profile-editor.component.html',
+  styleUrls: ['./profile-editor.component.css']
+})
+export class ProfileEditorComponent {
+  profileForm = this.fb.group({
+    firstName: [''],
+    lastName: [''],
+    address: this.fb.group({
+      street: [''],
+      city: [''],
+      state: [''],
+      zip: ['']
+    }),
+  });
+
+  constructor(private fb: FormBuilder) { }
+}
+```
+
+Use the `group()` method with the same object to define the properties in the model. The value for each control name is *an array* containing the initial value as the first item in the array.
+
+> **Note:** You can define the control with just the initial value, but if your controls need sync or async validation, add sync and async validators as the second and third items in the array.
+
+
+
+
+
+# Lifecycle Hooks
+
+## ngOnChanges
+
+*ngOnChanges*: Called every time *a data-bound input property* changes. It’s called a first time before the **ngOnInit** hook. The hook receives a *SimpleChanges* object that contains the previous and current values for the data-bound inputs properties. This hook gets called often, so it’s a good idea to limit the amount of processing it does.
+
+```typescript
+import { Component, Input, SimpleChanges, OnChanges }
+  from '@angular/core';
+
+@Component({
+  // ...
+})
+export class MyTodoComponent implements OnChanges {
+  @Input() title: string;
+  @Input() content: string;
+
+  constructor() { }
+
+  ngOnChanges(changes: SimpleChanges) {
+    for (let property in changes) {
+      if (property === 'title') {
+        console.log('Previous:', changes[property].previousValue);
+        console.log('Current:', changes[property].currentValue);
+      }
+    }
+  }
+}
+```
+
+
+
+## ngOnInit
+
+Called once upon initialization of the component.
+
+## ngOnDestroy
+
+Called once when the component is destroyed and a good hook to use to cleanup and unsubscribe from observables.
+
+## ngDoCheck
+
+Since `ngOnChanges` only detects `@input` properties, it makes it possible to check other changes.  
+
+
+
+
 
 # Typescript
 

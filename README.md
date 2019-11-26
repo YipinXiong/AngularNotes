@@ -282,7 +282,7 @@ export class ProductDetailsComponent implements OnInit {
   ) { }
   
   /* 
-  	In the ngOnInit() method, subscribe to route params and fetch the product based 		on the productId. Angular calls ngOnInit() shortly after creating a component. 
+  	In the ngOnInit() method, subscribe to route params and fetch the product based on the productId. Angular calls ngOnInit() shortly after creating a component. 
   */
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -292,8 +292,6 @@ export class ProductDetailsComponent implements OnInit {
 }
 
 ```
-
-
 
 The `<router-outlet>` tells the router where to display routed views. 
 
@@ -664,8 +662,6 @@ Both reactive and template-driven forms share underlying building blocks.
 
 Use **#** to reference the dom?
 
-
-
 ## Reactive Form
 
 *Reactive forms* provide a model-driven approach to handling form inputs whose values change over time.
@@ -865,3 +861,88 @@ In Angualr, you need to take advantage of decoraters(@) to configure your applic
 
 Decoraters are used to inform Angular of what part of this `class` belongs to.  
 
+## Detection Algorithm
+
+Change-decection algorithm is the same as React. If you just push a new value into the same array, the algorithm will just take it as unchanged. 
+
+> If you *mutate* the array, no pipe is invoked and the display isn't updated; if you *replace* the array, the pipe executes and the display is updated.  Replacing the array is an efficient way to signal Angular to update the display. When do you replace the array? When the data changes. 
+
+
+
+## Maps
+
+[RxJS map, mergeMap, switchMap and concatMap](https://medium.com/@luukgruijs/understanding-rxjs-map-mergemap-switchmap-and-concatmap-833fc1fb09ff)
+
+> `map` is classic map
+>
+> When you have to deal with an ‘inner’ Observable it’s easier to use mergeMap, switchMap or concatMap. 
+>
+> - `mergeMap` Use mergeMap if you simply want to flatten the data into one Observable
+>
+> - `SwitchMap` SwitchAll cancels the previous subscription and subscribes to the new one. 
+>
+> - `concatMap` ensures the only need **the latest value** and use concatMap if you need to flatten the data into one Observable and **the order is important to you**
+
+
+
+## Subject vs Observable vs BehaviorSubject
+
+**BehaviorSubject** is a type of subject, a subject is a special type of observable so you can subscribe to messages like any other observable. The unique features of BehaviorSubject are:
+
+- It needs an initial value as it must always return a value on subscription even if it hasn't received a `next()`
+- Upon subscription, it returns the last value of the subject. A regular observable only triggers when it receives an `onnext`
+- at any point, you can retrieve the last value of the subject in a non-observable code using the `getValue()` method.
+
+Unique features of a subject compared to an observable are:
+
+- It is an observer in addition to being an observable so you can also send values to a subject in addition to subscribing to it.
+
+In addition, you can get an observable from behavior subject using the `asObservable()` method on `BehaviorSubject`.
+
+**Observable** is a Generic, and `BehaviorSubject` is technically a sub-type of Observable because BehaviorSubject is an observable with specific qualities.
+
+Example with **BehaviorSubject**:
+
+```ts
+// Behavior Subject
+
+// a is an initial value. if there is a subscription 
+// after this, it would get "a" value immediately
+let bSubject = new BehaviorSubject("a"); 
+
+bSubject.next("b");
+
+bSubject.subscribe(value => {
+  console.log("Subscription got", value); // Subscription got b, 
+                                          // ^ This would not happen 
+                                          // for a generic observable 
+                                          // or generic subject by default
+});
+
+bSubject.next("c"); // Subscription got c
+bSubject.next("d"); // Subscription got d
+```
+
+Example 2 with regular subject:
+
+```ts
+// Regular Subject
+
+let subject = new Subject(); 
+
+subject.next("b");
+
+subject.subscribe(value => {
+  console.log("Subscription got", value); // Subscription wont get 
+                                          // anything at this point
+});
+
+subject.next("c"); // Subscription got c
+subject.next("d"); // Subscription got d
+```
+
+An observable can be created from both `Subject` and `BehaviorSubject` using `subject.asObservable()`.
+
+The only difference being you can't send values to an observable using `next()` method.
+
+In Angular services, I would use `BehaviorSubject` for a data service as an angular service often initializes before component and behavior subject ensures that the component consuming the service receives the last updated data even if there are no new updates since the component's subscription to this data.

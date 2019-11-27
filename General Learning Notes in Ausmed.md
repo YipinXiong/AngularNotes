@@ -1,6 +1,8 @@
-# Bootstrap Bootcamp
+# General Learning 
 
-## Speacing Utilities
+## Bootstrap
+
+### Speacing Utilities
 
 The classes are named using the format `{property}{sides}-{size}` for `xs` and `{property}{sides}-{breakpoint}-{size}` for `sm`, `md`, `lg`, and `xl`.
 
@@ -29,3 +31,14 @@ Where *size* is one of:
 - `5` - (by default) for classes that set the `margin` or `padding` to `$spacer * 3`
 - `auto` - for classes that set the `margin` to auto
 
+
+
+## CI & CD - Continuous Integration and Deployment
+
+> Excerpt from [What is CI/CD?](https://medium.com/@nirespire/what-is-cicd-concepts-in-continuous-integration-and-deployment-4fe3f6625007)
+
+ In short, it lays out some practices to follow in order for the code you write to more quickly and safely get to your users and ultimately generate value.
+
+### CI : Continuous Integration
+
+You want all parts of what goes into making your application go to the same place and run through the same processes with results published to an easy to access place. For example, committing all your application code in a single repository, which allows you, the developer, to focus on writing the code. Your central repository of code is there to receive your changes while your automated processes can build, test, and scan your code while providing reports.

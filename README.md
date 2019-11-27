@@ -232,6 +232,8 @@ Since `*ngFor` can't do anything with an `Observable`, use the pipe character (`
 
 In Angular, the best practice is to load and configure the router in a separate, top-level module that is dedicated to routing and imported by the root `AppModule`.
 
+A routed Angular application has one singleton instance of the *`Router`* service. When the browser's URL changes, that router looks for a corresponding `Route` from which it can determine the component to display.
+
 ## Register URLs
 
 The meta file is `app.module.ts`. Thus, the very first thing is to register the url.
@@ -246,13 +248,21 @@ The meta file is `app.module.ts`. Thus, the very first thing is to register the 
     RouterModule.forRoot([
       { path: '', component: ProductListComponent },
       { path: 'products/:productId', component: ProductDetailsComponent },
+      {
+    		path: 'heroes',
+    		component: HeroListComponent,
+     		data: { title: 'Heroes List' }
+  		}
     ])
   ],
 ```
 
+The `data` property in the third route is a place to store arbitrary data associated with this specific route. The data property is accessible within each activated route. Use it to store items such as page titles, breadcrumb text, and other read-only, *static* data. You'll use the [resolve guard](https://angular.io/guide/router#resolve-guard) to retrieve *dynamic* data later in the guide.
 
+> **The order of the routes in the configuration matters** and this is by design. The router uses a **first-match wins** strategy when matching routes, so more specific routes should be placed above less specific routes. In the configuration above, routes with a static path are listed first, followed by an empty path route, that matches the default route. The wildcard route comes last because it matches *every URL* and should be selected *only* if no other routes are matched first.
 
 ```html
+
 <div *ngFor="let product of products; index as productId">
 
   <h3>
@@ -266,7 +276,11 @@ The meta file is `app.module.ts`. Thus, the very first thing is to register the 
 
 
 
-## Using route info
+## Router State
+
+After the end of each successful navigation lifecycle, the router builds a tree of `ActivatedRoute` objects that make up the current state of the router. You can access the current `RouterState` from anywhere in the application using the `Router` service and the `routerState` property. Each `ActivatedRoute` in the `RouterState` provides methods to traverse up and down the route tree to get information from parent, child and sibling routes.
+
+## Activated route
 
 ```typescript
 import { Component, OnInit } from '@angular/core';
@@ -293,21 +307,20 @@ export class ProductDetailsComponent implements OnInit {
 
 ```
 
-The `<router-outlet>` tells the router where to display routed views. 
+The route path and parameters are available through an injected router service called the [ActivatedRoute](https://angular.io/api/router/ActivatedRoute). It has a great deal of useful information including:
 
-> `<router-outlet>`  is Angular's   `<Switch> <Route />` in React;
->
-> `<a routerLink="/heroes> Heros </a>` is the `<Link to="" />` in React-Router-Dom
-
-The `RouterOutlet` is one of the router directives that became available to the `AppComponent` because `AppModule` imports `AppRoutingModule` which exported `RouterModule`.
-
-
-
-## Manipulations of Url 
-
-Similarly, in Angular, you need to leverage the `Location` to interact with the URL in the browser.
-
-To get the information appended in the url, you need `ActivatedRoute` from '@angular/router'
+| property     | Description                                                  |
+| ------------ | ------------------------------------------------------------ |
+| url          | An `observable` of the route paths(s), represented as an array of strings for each part of the route path. |
+| data         | An `Observable` that contains the `data` object provided for the route. Also contains any resolved values from the [resolve guard](https://angular.io/guide/router#resolve-guard). |
+| paramMap     | An `Observable` that contains a [map](https://angular.io/api/router/ParamMap) of the required and [optional parameters](https://angular.io/guide/router#optional-route-parameters) specific to the route. The map supports retrieving single and multiple values from the same parameter. |
+| queryParaMap | An `Observable` that contains a [map](https://angular.io/api/router/ParamMap) of the [query parameters](https://angular.io/guide/router#query-parameters) available to all routes. The map supports retrieving single and multiple values from the query parameter. |
+| fragment     | An `Observable` of the URL [fragment](https://angular.io/guide/router#fragment) available to all routes. |
+| outlet       | The name of the `RouterOutlet` used to render the route. For an unnamed outlet, the outlet name is *primary*. |
+| routeConfig  | The route configuration used for the route that contains the origin path. |
+| parent       | The route's parent `ActivatedRoute` when this route is a [child route](https://angular.io/guide/router#child-routing-component). |
+| firstChild   | Contains the first `ActivatedRoute` in the list of this route's child routes. |
+| children     | Contains all the [child routes](https://angular.io/guide/router#child-routing-component) activated under the current route. |
 
 ```typescript
 constructor(
@@ -327,7 +340,109 @@ goBack(): void {
 }
 ```
 
+## Router events
 
+During each navigation, the `Router` emits navigation events through the `Router.events` property. These events range from when the navigation starts and ends to many points in between. 
+
+##  `Router` terms and their meanings
+
+| Router Part                                                  | Meaning                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Router                                                       | Displays the application component for the active URL. Manages navigation from one component to the next. |
+| [RouterModule](https://angular.io/api/router/RouterModule)   | A separate NgModule that provides the necessary service providers and directives for navigating through application views. |
+| [Routes](https://angular.io/api/router/Routes)               | Defines an array of Routes, each mapping a URL path to a component. |
+| [Route](https://angular.io/api/router/Route)                 | Defines how the router should navigate to a component based on a URL pattern. Most routes consist of a path and a component type. |
+| [RouterOutlet](https://angular.io/api/router/RouterOutlet)   | The directive (`<router-outlet>`) that marks where the router displays a view. |
+| [RouterLink](https://angular.io/api/router/RouterLink)       | The directive for binding a clickable HTML element to a route. Clicking an element with a `routerLink` directive that is bound to a *string* or a *link parameters array* triggers a navigation. |
+| [RouterLinkActive](https://angular.io/api/router/RouterLinkActive) | The directive for adding/removing classes from an HTML element when an associated `routerLink` contained on or inside the element becomes active/inactive. |
+| [ActivatedRoute](https://angular.io/api/router/ActivatedRoute) | A service that is provided to each route component that contains route specific information such as route parameters, static data, resolve data, global query params, and the global fragment. |
+| [RouterState](https://angular.io/api/router/RouterState)     | The current state of the router including a tree of the currently activated routes together with convenience methods for traversing the route tree. |
+| ***Link parameters array***                                  | An array that the router interprets as a routing instruction. You can bind that array to a `RouterLink` or pass the array as an argument to the `Router.navigate` method. |
+| ***Routing component***                                      | An Angular component with a `RouterOutlet` that displays views based on router navigations. |
+
+
+
+## Routing Module
+
+ As the application grows and you make use of more `Router` features, such as guards, resolvers, and child routing, you'll naturally want to refactor the routing configuration into its own file. We recommend moving the routing information into a special-purpose module called a *Routing Module*.
+
+The **Routing Module** has several characteristics:
+
+- Separates routing concerns from other application concerns.
+- Provides a module to replace or remove when testing the application.
+- Provides a well-known location for routing service providers including guards and resolvers.
+- Does **not** declare components.
+
+```ts
+import { NgModule }              from '@angular/core';
+import { RouterModule, Routes }  from '@angular/router';
+
+import { CrisisListComponent }   from './crisis-list/crisis-list.component';
+import { HeroListComponent }     from './hero-list/hero-list.component';
+import { PageNotFoundComponent } from './page-not-found/page-not-found.component';
+
+const appRoutes: Routes = [
+  { path: 'crisis-center', component: CrisisListComponent },
+  { path: 'heroes',        component: HeroListComponent },
+  { path: '',   redirectTo: '/heroes', pathMatch: 'full' },
+  { path: '**', component: PageNotFoundComponent }
+];
+
+@NgModule({
+  imports: [
+    RouterModule.forRoot(
+      appRoutes,
+      { enableTracing: true } // <-- debugging purposes only
+    )
+  ],
+  exports: [
+    RouterModule
+  ]
+})
+export class AppRoutingModule {}
+```
+
+Only call `RouterModule.forRoot()` in the root `AppRoutingModule` (or the `AppModule` if that's where you register top level application routes). In any other module, you must call the **`RouterModule.forChild`** method to register additional routes.
+
+```ts
+//src/app/heroes/heroes-routing.module.ts
+import { NgModule }             from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+
+import { HeroListComponent }    from './hero-list/hero-list.component';
+import { HeroDetailComponent }  from './hero-detail/hero-detail.component';
+
+const heroesRoutes: Routes = [
+  { path: 'heroes',  component: HeroListComponent },
+  { path: 'hero/:id', component: HeroDetailComponent }
+];
+
+@NgModule({
+  imports: [
+    RouterModule.forChild(heroesRoutes)
+  ],
+  exports: [
+    RouterModule
+  ]
+})
+export class HeroesRoutingModule { }
+```
+
+
+
+## Module import order matters
+
+```ts
+imports: [
+  BrowserModule,
+  FormsModule,
+  HeroesModule,
+  AppRoutingModule
+]
+//Look at the module imports array. Notice that the AppRoutingModule is last. Most importantly, it comes after the HeroesModule.
+```
+
+The order of route configuration matters. The router accepts the first route that matches a navigation request path.
 
 # Services
 
@@ -837,7 +952,27 @@ Since `ngOnChanges` only detects `@input` properties, it makes it possible to ch
 
 [typescript in 5 minutes](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html)
 
+## Generics
 
+In languages like C# and Java, one of the main tools in the toolbox for creating reusable components is *generics*, that is, being able to create a component that can work over a variety of types rather than a single one. This allows users to consume these components and use their own types.
+
+What the difference between `any` and `T`?
+
+```typescript
+function identity(arg: any): any {
+    return arg;
+}
+
+vs
+
+function identity<T>(arg: T): T {
+    return arg;
+}
+
+//We’ve now added a type variable T to the identity function. This T allows us to capture the type the user provides (e.g. number), so that we can use that information later.
+```
+
+In short, `T` indicates more information than `any`. For the first version, TypeScript only knows that the `identity` takes `any` of parameter and returns `any`. However, in the second version, *TypeScript infers that the return type is the same as the input type*. 
 
 # RxJS
 

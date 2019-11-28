@@ -291,7 +291,7 @@ export class ProductDetailsComponent implements OnInit {
   product;
 
   constructor(
-  //dependency injection?
+  //dependency injection
     private route: ActivatedRoute,
   ) { }
   
@@ -376,14 +376,13 @@ The **Routing Module** has several characteristics:
 ```ts
 import { NgModule }              from '@angular/core';
 import { RouterModule, Routes }  from '@angular/router';
-
 import { CrisisListComponent }   from './crisis-list/crisis-list.component';
 import { HeroListComponent }     from './hero-list/hero-list.component';
 import { PageNotFoundComponent } from './page-not-found/page-not-found.component';
 
 const appRoutes: Routes = [
-  { path: 'crisis-center', component: CrisisListComponent },
-  { path: 'heroes',        component: HeroListComponent },
+  { path:'crisis-center', component: CrisisListComponent },
+  { path: 'heroes', component: HeroListComponent },
   { path: '',   redirectTo: '/heroes', pathMatch: 'full' },
   { path: '**', component: PageNotFoundComponent }
 ];
@@ -443,6 +442,248 @@ imports: [
 ```
 
 The order of route configuration matters. The router accepts the first route that matches a navigation request path.
+
+
+
+## Activated Route in action
+
+Sometimes, you just need to refresh the data but using the same component to render data. For example, a user might navigate amongs urls with different `id` but same template component. Unfortunately, `ngOnInit` is only called once per component instantiation. 
+
+You need a way to detect when the route parameters change from *within the same instance*. The observable `paramMap` property handles that beautifully.
+
+```ts
+ngOnInit() {
+  this.hero$ = this.route.paramMap.pipe(
+    switchMap((params: ParamMap) =>
+      this.service.getHero(params.get('id')))
+  );
+}
+```
+
+> When subscribing to an observable in a component, you almost always arrange to unsubscribe when the component is destroyed. There are a few exceptional observables where this is not necessary. The `ActivatedRoute` observables are among the exceptions. The `ActivatedRoute` and its observables are insulated from the `Router` itself. The `Router` destroys a routed component when it is no longer needed and the injected `ActivatedRoute` dies with it. Feel free to unsubscribe anyway. It is harmless and never a bad practice.
+
+When you know for certain that a `component` instance will *never, never, ever* be re-used, you can simplify the code with the *snapshot*. The `route.snapshot` provides the initial value of the route parameter map. You can access the parameters directly without subscribing or adding observable operators. It's much simpler to write and read:
+
+```ts
+ngOnInit() {
+  let id = this.route.snapshot.paramMap.get('id');
+
+  this.hero$ = this.service.getHero(id);
+}
+```
+
+> **Remember:** you only get the *initial* value of the parameter map with this technique. Stick with the observable `paramMap` approach if there's even a chance that the router could re-use the component. This sample stays with the observable `paramMap` strategy just in case.
+
+
+
+## Navigating abck to the previous URL with information
+
+*`Optional parameters` are the ideal vehicle for conveying arbitrarily complex information during navigation.* Optional parameters aren't involved in pattern matching and afford flexibility of expression. The router supports navigation with optional parameters as well as required route parameters. Define *optional* parameters in a separate object *after* you define the required route parameters.
+
+### Navigation binding to a click event
+
+```typescript
+gotoHeroes() {
+  this.router.navigate(['/heroes']);
+}
+
+// This array lacks a route parameter because you had no reason to send information to the HeroListComponent.
+
+// Now you have a reason. You'd like to send the id of the current hero with the navigation request so that the HeroListComponent can highlight that hero in its list. 
+
+//======revised version ==========
+gotoHeroes(hero: Hero) {
+  let heroId = hero ? hero.id : null;
+  // Pass along the hero id if available
+  // so that the HeroList component can select that hero.
+  // Include a junk 'foo' property for fun.
+  this.router.navigate(['/heroes', { id: heroId, foo: 'foo' }]);
+}
+```
+
+The `ActivatedRoute.paramMap` property is an `Observable` map of route parameters. The `paramMap` emits a new map of values that includes `id` when the user navigates to the component. 
+
+## Child Routing
+
+This section shows you how to organize the crisis center to conform to the following recommended pattern for Angular applications:
+
+- Each feature area resides in its own folder.
+- Each feature has its own Angular feature module.
+- Each area has its own area root component.
+- Each area root component has its own router outlet and child routes.
+- Feature area routes rarely (if ever) cross with routes of other features.
+
+If your app had many feature areas, the app component trees might look like this:
+
+![Component Tree](README.assets/component-tree.png)
+
+```typescript
+import { NgModule }             from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+
+import { CrisisCenterHomeComponent } from './crisis-center-home/crisis-center-home.component';
+import { CrisisListComponent }       from './crisis-list/crisis-list.component';
+import { CrisisCenterComponent }     from './crisis-center/crisis-center.component';
+import { CrisisDetailComponent }     from './crisis-detail/crisis-detail.component';
+
+const crisisCenterRoutes: Routes = [
+  {
+    path: 'crisis-center',
+    component: CrisisCenterComponent,
+    children: [
+      {
+        path: '',
+        component: CrisisListComponent,
+        children: [
+          {
+            path: ':id',
+            component: CrisisDetailComponent
+          },
+          {
+            path: '',
+            component: CrisisCenterHomeComponent
+          }
+        ]
+      }
+    ]
+  }
+];
+
+@NgModule({
+  imports: [
+    RouterModule.forChild(crisisCenterRoutes)
+  ],
+  exports: [
+    RouterModule
+  ]
+})
+export class CrisisCenterRoutingModule { }
+```
+
+> There are *important differences* in the way the router treats these *child routes*. The router displays the components of these routes in the `RouterOutlet` of the `CrisisCenterComponent`, not in the `RouterOutlet` of the `AppComponent` shell.
+
+
+
+Use `router` you can navigate by relative url rather than absolute url
+
+```typescript
+// Relative navigation back to the crises
+this.router.navigate(['../', { id: crisisId, foo: 'foo' }], { relativeTo: this.route });
+```
+
+
+
+You can use this as a way to handle modal.
+
+```js
+{
+  path: 'compose',
+  component: ComposeMessageComponent,
+  outlet: 'popup'
+},
+  
+//use `outlet` to target which router-outlet to display the component
+```
+
+
+
+```html
+<a [routerLink]="[{ outlets: { popup: ['compose'] } }]">Contact</a>
+```
+
+Although the `compose` route is pinned to the "popup" outlet, that's not sufficient for wiring the route to a `RouterLink` directive. You have to specify the named outlet in a *link parameters array* and bind it to the `RouterLink` with a property binding.
+
+The *link parameters array* contains an object with a single `outlets` property whose value is another object keyed by one (or more) outlet names. In this case there is only the "popup" outlet property and its value is another *link parameters array* that specifies the `compose` route.
+
+You are in effect saying, *when the user clicks this link, display the component associated with the `compose` route in the `popup` outlet*.
+
+## Route guards
+
+A guard's return value controls the router's behavior:
+
+- If it returns `true`, the navigation process continues.
+- If it returns `false`, the navigation process stops and the user stays put.
+- If it returns a `UrlTree`, the current navigation cancels and a new navigation is initiated to the `UrlTree` returned.
+
+**Note:** The guard can also tell the router to navigate elsewhere, effectively canceling the current navigation. When doing so inside a guard, the guard should return `false`;
+
+The router supports multiple guard interfaces:
+
+- [`CanActivate`](https://angular.io/api/router/CanActivate) to mediate navigation *to* a route.
+- [`CanActivateChild`](https://angular.io/api/router/CanActivateChild) to mediate navigation *to* a child route.
+- [`CanDeactivate`](https://angular.io/api/router/CanDeactivate) to mediate navigation *away* from the current route.
+- [`Resolve`](https://angular.io/api/router/Resolve) to perform route data retrieval *before* route activation.
+- [`CanLoad`](https://angular.io/api/router/CanLoad) to mediate navigation *to* a feature module loaded *asynchronously*.
+
+```typescript
+import { Injectable } from '@angular/core';
+import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
+
+import { AuthService }      from './auth.service';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class AuthGuard implements CanActivate {
+  constructor(private authService: AuthService, private router: Router) {}
+
+  canActivate(
+    next: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot): boolean {
+    let url: string = state.url;
+
+    return this.checkLogin(url);
+  }
+
+  checkLogin(url: string): boolean {
+    if (this.authService.isLoggedIn) { return true; }
+
+    // Store the attempted URL for redirecting
+    this.authService.redirectUrl = url;
+
+    // Navigate to the login page with extras
+    this.router.navigate(['/login']);
+    return false;
+  }
+}
+```
+
+Notice that you *inject* the `AuthService` and the `Router` in the constructor. You haven't provided the `AuthService` yet but it's good to know that you can inject helpful services into routing guards.
+
+The `ActivatedRouteSnapshot` contains the *future* route that will be activated and the `RouterStateSnapshot` contains the *future* `RouterState` of the application, should you pass through the guard check.
+
+### *CanActivateChild*: guarding child routes
+
+You can also protect child routes with the `CanActivateChild` guard. The `CanActivateChild` guard is similar to the `CanActivate` guard. The key difference is that it runs *before* any child route is activated.
+
+### *CanDeactivate*: handling unsaved changes
+
+What do you do about unapproved, unsaved changes when the user navigates away? You can't just leave and risk losing the user's changes; that would be a terrible experience. It's better to pause and let the user decide what to do. If the user cancels, you'll stay put and allow more changes. If the user approves, the app can save.
+
+```typescript
+import { Injectable }    from '@angular/core';
+import { CanDeactivate } from '@angular/router';
+import { Observable }    from 'rxjs';
+
+export interface CanComponentDeactivate {
+ canDeactivate: () => Observable<boolean> | Promise<boolean> | boolean;
+}
+
+@Injectable({
+  providedIn: 'root',
+})
+export class CanDeactivateGuard implements CanDeactivate<CanComponentDeactivate> {
+  canDeactivate(component: CanComponentDeactivate) {
+    return component.canDeactivate ? component.canDeactivate() : true;
+  }
+}
+```
+
+Look at the above code, we define the interface to decouple the components from guards. By doing this, `canDeactiveGuard` does not depend on other components which need the guard by just calling the `canDeactivate` method.
+
+Alternatively, you could make a component-specific `CanDeactivate` guard for the `CrisisDetailComponent`. The `canDeactivate()` method provides you with the current instance of the `component`, the current `ActivatedRoute`, and `RouterStateSnapshot` in case you needed to access some external information.
+
+
 
 # Services
 

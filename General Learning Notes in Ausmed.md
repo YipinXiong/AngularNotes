@@ -42,3 +42,9 @@ Where *size* is one of:
 ### CI : Continuous Integration
 
 You want all parts of what goes into making your application go to the same place and run through the same processes with results published to an easy to access place. For example, committing all your application code in a single repository, which allows you, the developer, to focus on writing the code. Your central repository of code is there to receive your changes while your automated processes can build, test, and scan your code while providing reports.
+
+
+
+## Yipin's suggestions on staging Ausmed
+
+- Module 写的很好啊

@@ -476,7 +476,7 @@ ngOnInit() {
 
 
 
-## Navigating abck to the previous URL with information
+## Navigating back to the previous URL with information
 
 *`Optional parameters` are the ideal vehicle for conveying arbitrarily complex information during navigation.* Optional parameters aren't involved in pattern matching and afford flexibility of expression. The router supports navigation with optional parameters as well as required route parameters. Define *optional* parameters in a separate object *after* you define the required route parameters.
 

@@ -1256,6 +1256,79 @@ In short, `T` indicates more information than `any`. For the first version, Type
 
 [Visualization of RxJS](https://rxmarbles.com/#race)
 
+
+
+# Material UI
+
+## Table
+
+### 1.Write your mat-table and provide data
+
+Begin by adding the `<table mat-table>` component to your template and passing in data.
+
+The simplest way to provide data to the table is by passing a data array to the table's `dataSource` input. The table will take the array and render a row for each object in the data array.
+
+```html
+<table mat-table [dataSource]="myDataArray">
+  ...
+</table>
+```
+
+The system will not automatically check for changes to the data array. Instead, when objects are added, removed, or moved on the data array, you can trigger an update to the table's rendered rows by calling its `renderRows()` method.
+
+While an array is the *simplest* way to bind data into the data source. For more complex applications, using a `DataSource` instance is recommended. 
+
+### 2.Define the column templates
+
+Each column definition should be given a unique name and contain the content for its header and row cells. Here's a simple column definition with the name `'score'`. The header cell contains the text "Score" and each row cell will render the `score` property of each row's data.
+
+```html
+<ng-container matColumnDef="score">
+  <th mat-header-cell *matHeaderCellDef> Score </th>
+  <td mat-cell *matCellDef="let user"> {{user.score}} </td>
+</ng-container>
+```
+
+If your column is only responsible for rendering a single string value for the header and cells, you can instead define your column using the `mat-text-column`. The following column definition is equivalent to the one above.
+
+```html
+<mat-text-column name="score"></mat-text-column>
+```
+
+### 3.Define the row templates
+
+Tell the table which columns will be rendered in the header and data rows.
+
+```ts
+columnsToDisplay = ['userName', 'age'];
+```
+
+Then add `mat-header-row` and `mat-row` to the content of your `mat-table` and provide your column list as inputs.
+
+```html
+<tr mat-header-row *matHeaderRowDef="columnsToDisplay"></tr>
+<tr mat-row *matRowDef="let myRowData; columns: columnsToDisplay"></tr>
+```
+
+> Note that this list of columns provided to the rows can be in any order, not necessarily the order in which you wrote the column definitions. Also, you do not necessarily have to include every column that was defined in your template. This means that by changing your column list provided to the rows, you can easily re-order and include/exclude columns dynamically.
+
+### Advanced Data sources
+
+More complex use-cases may benefit from a more flexible approach involving an Observable stream or by encapsulating your data source logic into a `DataSource` class.
+
+The DataSource is meant to serve a place to encapsulate any sorting, filtering, pagination, and data retrieval logic specific to the application. A DataSource is simply a base class that has two functions: `connect` and `disconnect`. 
+
+- The `connect` function will be called by the table to receive a stream that emits the data array that should be rendered. 
+- The table will call `disconnect` when the table is destroyed, which cleans up any subscriptions that may have been registered during the connect process.
+
+You can add sorting and pagination to the table by using `MatSort` and `MatPaginator` and mutating the data provided to the table according to their outputs. Angular Material library comes with a `MatTableDataSource` that has already implemented the logic of determining what rows should be rendered according to the current table state. 
+
+### Pagination
+
+To paginate the table's data, add a `<mat-paginator>` after the table. If you are using the `MatTableDataSource` for your table's data source, simply provide the `MatPaginator` to your data source. It will automatically listen for page changes made by the user and send the right paged data to the table.
+
+[More information about Angular Material Table, such as filtering and sorting](https://material.angular.io/components/table/overview)
+
 # Self-comments
 
 In Angualr, it uses `directives` to change the default behaviors of html tags.

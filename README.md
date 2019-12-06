@@ -1345,6 +1345,10 @@ In Angualr, you need to take advantage of decoraters(@) to configure your applic
 
 Decoraters are used to inform Angular of what part of this `class` belongs to.  
 
+
+
+[How to use @ViewChild](https://medium.com/javascript-in-plain-english/viewchild-and-viewchildren-in-angular-6dc0934d2cf9)
+
 ## Detection Algorithm
 
 Change-decection algorithm is the same as React. If you just push a new value into the same array, the algorithm will just take it as unchanged. 
@@ -1430,3 +1434,28 @@ An observable can be created from both `Subject` and `BehaviorSubject` using `su
 The only difference being you can't send values to an observable using `next()` method.
 
 In Angular services, I would use `BehaviorSubject` for a data service as an angular service often initializes before component and behavior subject ensures that the component consuming the service receives the last updated data even if there are no new updates since the component's subscription to this data.
+
+
+
+## Recommended Architecture
+
+![img](README.assets/content_2.png)
+
+As you can see, there are now three main modules in the project:
+
+1. AppModule – the bootstrapping module, responsible for launching the application and combining other modules together
+2. CoreModule – core functionalities, mostly global services, that will be used in the whole application globally. They should not be imported by other application modules
+3. SharedModule – usually a set of components or services that will be reused in other application modules, not applied globally. They can be imported by feature modules.
+
+All remaining modules (so-called feature modules) should be isolated and independent. Such a structure not only allows for clear concerns separation, but is also a convenient starting point for implementing lazy loading functionality, another crucial step in preparing a scalable application architecture.
+
+
+
+## Dummy Component and Smart Component
+
+![img](README.assets/content_6.png)
+
+The change detection strategy for dummy components can be set to "onPush" which will trigger the change detection process for the component only when the input properties have been modified. It's an easy and very efficient method of optimizing Angular applications.
+
+![A recommended architecture of state management](README.assets/content_13.png)
+

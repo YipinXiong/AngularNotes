@@ -133,7 +133,7 @@ We integrate the operations about DOM into `directives`. Here are two other kind
 
 > You can apply many *attribute* directives to one host element. You can [only apply one](https://angular.io/guide/structural-directives#one-per-element) *structural* directive to a host element.
 >
-> ?
+> 
 >
 > from Angular - documentation 
 
@@ -340,6 +340,14 @@ goBack(): void {
 }
 ```
 
+There is another very useful usage in `this.route.snapshot.data['message']`. You can pass some dynamic data from route definition such as specific error messages.
+
+```js
+{path: 'not-found', component: ErrorPageComponent, data: {message: 'Page not found'}}
+```
+
+
+
 ## Router events
 
 During each navigation, the `Router` emits navigation events through the `Router.events` property. These events range from when the navigation starts and ends to many points in between. 
@@ -476,6 +484,60 @@ ngOnInit() {
 
 
 
+## Resolving Dynamic Data with the resolve guard
+
+Resolve interface shall be used to ensure the data available for the page to load. It executes after all the routes executed.
+
+```typescript
+import { Injectable } from "@angular/core";
+import { Resolve } from "@angular/router";
+
+import { EventService } from './shared/event.service';
+
+@Injectable()
+export class EventListResolver implements Resolve<any>{
+    constructor(private eventService:EventService){}
+
+    resolve(){
+        return this.eventService.getEvents()
+    }
+}
+```
+
+```js
+{path:'events',component:EventsListComponent, resolve:{events:EventListResolver}},
+```
+
+Resolved data can be accessed in the component via ActivatedRoute.
+
+```typescript
+import {Component, OnInit } from '@angular/core';
+import { EventService } from './shared/event.service';
+import { ActivatedRoute } from '@angular/router';
+import { IEvent } from './shared';
+
+@Component({
+    selector: 'events-list',
+    templateUrl:'./events-list.component.html',
+})
+
+export class EventsListComponent implements OnInit {
+    events:IEvent[]
+    constructor(private eventService:EventService,
+        private route:ActivatedRoute) {
+     }
+   
+    ngOnInit() { 
+        this.events = this.route.snapshot.data['events'];
+        //this.events = this.eventService.getEvents().;
+    }
+}
+```
+
+In this way, you can dynamically load data from `resolve` service.
+
+
+
 ## Navigating back to the previous URL with information
 
 *`Optional parameters` are the ideal vehicle for conveying arbitrarily complex information during navigation.* Optional parameters aren't involved in pattern matching and afford flexibility of expression. The router supports navigation with optional parameters as well as required route parameters. Define *optional* parameters in a separate object *after* you define the required route parameters.
@@ -502,6 +564,10 @@ gotoHeroes(hero: Hero) {
 ```
 
 The `ActivatedRoute.paramMap` property is an `Observable` map of route parameters. The `paramMap` emits a new map of values that includes `id` when the user navigates to the component. 
+
+`navigate` has a lot of configurations. One of the most useful configurations is `{ relativeTo: this.route, queryParamsHandling: 'preserve'}`. It's super self-explanatory, routing relatively and handling the query params. `preserve` means keep the queryParams even though you will be navigated to another Url.
+
+ 
 
 ## Child Routing
 
@@ -1035,6 +1101,14 @@ Both reactive and template-driven forms share underlying building blocks.
 
 - `ControlValueAccessor` creates a bridge between Angular `FormControl` instances and native DOM elements.
 
+And you need to use `ngModel` directive and `name` attribute to map your input value into a JavaScript Object. Use `ngModel` to control the form.
+
+`(ngSubmit)` to trigger a submit event the form
+
+To reference a ng form, you need to add  `#form="ngForm"` to the `<form>` in the template. However, for the specific input, you `<input ngModel #email="ngModel">`  
+
+`ngModelGroup` directive can be used to wrap several inputs' values so that you can get a grouped data entry in the submitted form object.
+
 
 
 ## Ref input's value 
@@ -1459,3 +1533,36 @@ The change detection strategy for dummy components can be set to "onPush" which 
 
 ![A recommended architecture of state management](README.assets/content_13.png)
 
+​	
+
+## View Encapsulation
+
+Component CSS styles are encapsulated into the component's view and don't affect the rest of the application. To control how this encapsulation happens on a *per component* basis, you can set the *view encapsulation mode* in the component metadata.
+
+- `ShadowDom` view encapsulation uses the browser's native shadow DOM implementation to attach a shadow DOM to the component's host element, and then puts the component view inside that shadow DOM. The component's styles are included within the shadow DOM.
+
+  ![img](README.assets/shadow-dom.png)
+
+- `Native` view encapsulation uses a now deprecated version of the browser's native shadow DOM implementation - [learn about the changes](https://hayato.io/2016/shadowdomv1/).
+
+- `Emulated` view encapsulation (the default) emulates the behavior of shadow DOM by preprocessing (and renaming) the CSS code to effectively scope the CSS to the component's view. 
+
+  > That means Angular will generate several specific attributes for the component, then apply the css with the specific attribute selectors so that the component scope css will only style the component.
+
+  ```html
+  <hero-details _nghost-pmm-5>
+    <h2 _ngcontent-pmm-5>Mister Fantastic</h2>
+    <hero-team _ngcontent-pmm-5 _nghost-pmm-6>
+      <h3 _ngcontent-pmm-6>Team</h3>
+    </hero-team>
+  </hero-detail>
+  ```
+
+  There are two kinds of generated attributes:
+
+  - An element that would be a shadow DOM host in native encapsulation has a generated `_nghost` attribute. This is typically the case for component host elements.
+  - An element within a component's view has a `_ngcontent` attribute that identifies to which host's emulated shadow DOM this element belongs.
+
+  
+
+- `None` means that Angular does no view encapsulation. Angular adds the CSS to the global styles. The scoping rules, isolations, and protections discussed earlier don't apply. This is essentially the same as pasting the component's styles into the HTML.

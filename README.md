@@ -56,8 +56,6 @@ Here it binds the `hero.name` property to the HTML textbox so that data can flow
 (dragover)="myFunction()"
 ```
 
-
-
 # Components
 
 A component consists of three things:
@@ -109,7 +107,7 @@ export class ProductAlertsComponent {
 
 You define private styles either inline in the `@Component.styles` array or as stylesheet file(s) identified in the `@Component.styleUrls` array.
 
- The Angular [class binding](https://angular.io/guide/template-syntax#class-binding) makes it easy to add and remove a CSS class conditionally. Just add `[class.some-css-class]="some-condition"` to the element you want to style.
+The Angular [class binding](https://angular.io/guide/template-syntax#class-binding) makes it easy to add and remove a CSS class conditionally. Just add `[class.some-css-class]="some-condition"` to the element you want to style.
 
 ```html
 <li *ngFor="let hero of heroes"
@@ -1566,3 +1564,17 @@ Component CSS styles are encapsulated into the component's view and don't affect
   
 
 - `None` means that Angular does no view encapsulation. Angular adds the CSS to the global styles. The scoping rules, isolations, and protections discussed earlier don't apply. This is essentially the same as pasting the component's styles into the HTML.
+
+
+
+## Multiple API calls as `Promise.all()`
+
+In RxJS, use `combineLatest(params: Observable[]).pipe([value1, value2...])`
+
+
+
+## Order your API calls
+
+Utilize `switchMap(_ => newObservable)`
+
+In this case, you can manage the order of your api calls with `switchMap`.

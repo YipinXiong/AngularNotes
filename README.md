@@ -1048,6 +1048,12 @@ this.heroes$ = this.searchTerms.pipe(
 );
 ```
 
+### BehaviorSubject
+
+*BehaviorSubjects are useful for representing "values over time". For instance, an event stream of birthdays is a Subject, but the stream of a person's age would be a BehaviorSubject.*
+
+
+
 Each operator works as follows:
 
 - `debounceTime(300)` waits until the flow of new string events pauses for 300 milliseconds before passing along the latest string. You'll never make requests more frequently than 300ms.
@@ -1302,7 +1308,7 @@ Since `ngOnChanges` only detects `@input` properties, it makes it possible to ch
 
 ## Generics
 
-In languages like C# and Java, one of the main tools in the toolbox for creating reusable components is *generics*, that is, being able to create a component that can work over a variety of types rather than a single one. This allows users to consume these components and use their own types.
+In languages like C# and Java, one of the main tools in the toolbox for creating reusable components is *generics*, that is, being able to create a component that can work over a variety of types rather than a single one. This allows users to consume these components and use their own types. Using `<>` to declare a variable which can be used as generics.
 
 What the difference between `any` and `T`?
 
@@ -1321,6 +1327,10 @@ function identity<T>(arg: T): T {
 ```
 
 In short, `T` indicates more information than `any`. For the first version, TypeScript only knows that the `identity` takes `any` of parameter and returns `any`. However, in the second version, *TypeScript infers that the return type is the same as the input type*. 
+
+
+
+
 
 # RxJS
 
@@ -1400,6 +1410,16 @@ You can add sorting and pagination to the table by using `MatSort` and `MatPagin
 To paginate the table's data, add a `<mat-paginator>` after the table. If you are using the `MatTableDataSource` for your table's data source, simply provide the `MatPaginator` to your data source. It will automatically listen for page changes made by the user and send the right paged data to the table.
 
 [More information about Angular Material Table, such as filtering and sorting](https://material.angular.io/components/table/overview)
+
+
+
+# Use WebStorm Effectively
+
+ Command + Control + A: search for actions
+
+double shift => search everywhere
+
+
 
 # Self-comments
 
@@ -1578,3 +1598,50 @@ In RxJS, use `combineLatest(params: Observable[]).pipe([value1, value2...])`
 Utilize `switchMap(_ => newObservable)`
 
 In this case, you can manage the order of your api calls with `switchMap`.
+
+## `<ng-template>`, `<ng-container>` , `<ng-content>` and `*ngTemplateOutlet` directive
+
+[Everything you need to know about <ng-template>, <ng-content>, <ng-container> and *ngTemplateOutlet in Angular](https://medium.com/free-code-camp/everything-you-need-to-know-about-ng-template-ng-content-ng-container-and-ngtemplateoutlet-4b7b51223691)
+
+### ng-template
+
+`ng-template` works as a `*ngIf` holder which will hide all the plain text while rendering out the tags inside of it. Angular replaces the `ng-template` with diagnostic comments. 
+
+
+
+### ng-container
+
+It works exactly the same as `<>` in React. One important fact that we cannot apply two structual directives into a signle tag. Even though the *ngIf = `someFalsyValue`, we will introduce empty `div`s, which might do some negative impacts on the level of nesting that you have to do to apply your styling (CSS) and event listeners.
+
+The Angular `ng-container` is a grouping element that doesn't interfere with styles or layout because Angular *doesn't put it in the DOM*.
+
+![img](README.assets/1*j-TJRTA11OrLKdLrmrjQjA.png)
+
+> See we got rid of those empty `div`s. We should use `ng-container` when we just want to apply multiple structural directives without introducing any extra element in our DOM.
+
+
+
+### ng-content
+
+They are used to create configurable components. This means the components can be configured depending on the children html. This is well known as **Content Projection**. ( the same as <children> in Vue)
+
+![img](README.assets/1*G6Ruc21MJctpiYqkdD5DjQ.png)
+
+![img](README.assets/1*rZar8_BvO5g53BQVJS36aQ.png)
+
+
+
+*ngTemplateOutlet
+
+Usages: 
+
+- insert a common template in various sections of a view regardlessof  loops or condition
+- to make a highly configured component.
+
+![img](README.assets/1*M2mxgv1g3VcftdHOFFmTdw.png)
+
+![img](README.assets/1*AwPv-pFH7e-Abhr-odvPyQ.png)
+
+![img](README.assets/1*KHFWhtDmaysZMxGDTT_61Q.png)
+
+![img](README.assets/1*13rIyei1HqPdOsQ44l9tug.png)

@@ -784,6 +784,10 @@ export class CanDeactivateGuard implements CanDeactivate<CrisisDetailComponent> 
 
 
 
+## Multiple Outlets
+
+[Angular How to Deal with Multiple Outlets](https://www.techiediaries.com/angular-router-multiple-outlets/) 
+
 # Services
 
 ## Introduction 
@@ -1421,7 +1425,7 @@ double shift => search everywhere
 
 
 
-# Self-comments
+# General Knowledge / Uncategorized
 
 In Angualr, it uses `directives` to change the default behaviors of html tags.
 
@@ -1555,6 +1559,10 @@ The change detection strategy for dummy components can be set to "onPush" which 
 
 ## View Encapsulation
 
+[How does Angular style components?](https://blog.thoughtram.io/angular/2015/06/25/styling-angular-2-components.html)
+
+[View Encapsulation in depth](https://blog.thoughtram.io/angular/2015/06/29/shadow-dom-strategies-in-angular2.html)
+
 Component CSS styles are encapsulated into the component's view and don't affect the rest of the application. To control how this encapsulation happens on a *per component* basis, you can set the *view encapsulation mode* in the component metadata.
 
 - `ShadowDom` view encapsulation uses the browser's native shadow DOM implementation to attach a shadow DOM to the component's host element, and then puts the component view inside that shadow DOM. The component's styles are included within the shadow DOM.
@@ -1635,7 +1643,7 @@ They are used to create configurable components. This means the components can b
 
 Usages: 
 
-- insert a common template in various sections of a view regardlessof  loops or condition
+- insert a common template in various sections of a view regardless of  loops or condition
 - to make a highly configured component.
 
 ![img](README.assets/1*M2mxgv1g3VcftdHOFFmTdw.png)
@@ -1645,3 +1653,15 @@ Usages:
 ![img](README.assets/1*KHFWhtDmaysZMxGDTT_61Q.png)
 
 ![img](README.assets/1*13rIyei1HqPdOsQ44l9tug.png)
+
+
+
+## Tree Shaking
+
+[Tree shaking in Angular](https://coryrylan.com/blog/tree-shakeable-providers-and-services-in-angular)
+
+
+
+## How to make a responsive YouTube Video
+
+[Reponsive YouTube Video](https://avexdesigns.com/responsive-youtube-embed/)

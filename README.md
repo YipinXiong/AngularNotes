@@ -1260,6 +1260,14 @@ Use the `group()` method with the same object to define the properties in the mo
 
 # Lifecycle Hooks
 
+[Lifecyle Hooks in Angular and embeded hyperlink of what is content projection? inside (Quick Recap)](https://alligator.io/angular/lifecycle-hooks/)
+
+[Lifecycle Hooks with Demo Code and Diagrams](https://medium.com/bb-tutorials-and-thoughts/angular-understanding-angular-lifecycle-hooks-with-a-sample-project-375a61882478)
+
+[What's doCheck really meaning in Angular?](https://medium.com/angular-in-depth/if-you-think-ngdocheck-means-your-component-is-being-checked-read-this-article-36ce63a3f3e5)
+
+![Preview of Lifecycle hooks sequence](README.assets/1*V7eik2YxClqvffduCfthpg.jpeg)
+
 ## ngOnChanges
 
 *ngOnChanges*: Called every time *a data-bound input property* changes. It’s called a first time before the **ngOnInit** hook. The hook receives a *SimpleChanges* object that contains the previous and current values for the data-bound inputs properties. This hook gets called often, so it’s a good idea to limit the amount of processing it does.

@@ -1090,6 +1090,8 @@ Both reactive and template-driven forms share underlying building blocks.
 
   > Just as a form control instance gives you control over a single input field, a form group instance tracks the form state of a group of form control instances (for example, a form)
 
+  ###  Associating the FormGroup model and view
+
   ```html
   <form [formGroup]="profileForm">
     <label>
@@ -1103,7 +1105,7 @@ Both reactive and template-driven forms share underlying building blocks.
   </form>
   ```
 
-  Note that just as a form group contains a group of controls, the *profile form* `FormGroup` is bound to the `form` element with the `FormGroup` directive, creating a communication layer between the model and the form containing the inputs. The `formControlName` input provided by the `FormControlName` directive binds each individual input to the form control defined in `FormGroup`. The form controls communicate with their respective elements. They also communicate changes to the form group instance, which provides the source of truth for the model value.
+  > Note that just as a form group contains a group of controls, **the *profile form* `FormGroup` is bound to the `form` element with the `FormGroup` directive, creating a communication layer between the model and the form containing the inputs.** The `formControlName` input provided by the `FormControlName` directive binds each individual input to the form control defined in `FormGroup`. The form controls communicate with their respective elements. They also communicate changes to the form group instance, which provides the source of truth for the model value.
 
 - `FormArray` tracks the same values and status for an array of form controls.
 
@@ -1214,12 +1216,25 @@ export class ProfileEditorComponent {
 
 Even though the `address` element in the form group is a child of the overall `profileForm` element in the form group, the same rules apply with value and status changes. Changes in status and value from the nested form group **propagate to the parent form group**, maintaining consistency with the overall model.
 
-### Partial model updates
+### Partial model updates - setValue() vs patchValue()
 
 There are two ways to update the model value:
 
 - Use the `setValue()` method to set a new value for an individual control. The `setValue()` method strictly adheres to the structure of the form group and replaces the entire value for the control.
 - Use the `patchValue()` method to replace any properties defined in the object that have changed in the form model.
+
+patchValue() is able to partially update the values of the form.
+
+```ts
+  this.profileForm.patchValue({
+    firstName: 'Nancy',
+    address: {
+      street: '123 Drew Street'
+    }
+  });
+```
+
+
 
 ### FormBuilder - Service
 
@@ -1255,6 +1270,56 @@ Use the `group()` method with the same object to define the properties in the mo
 > **Note:** You can define the control with just the initial value, but if your controls need sync or async validation, add sync and async validators as the second and third items in the array.
 
 
+
+### Dynamic controls using formArrays
+
+```ts
+profileForm = this.fb.group({
+  firstName: ['', Validators.required],
+  lastName: [''],
+  address: this.fb.group({
+    street: [''],
+    city: [''],
+    state: [''],
+    zip: ['']
+  }),
+  aliases: this.fb.array([
+    this.fb.control('')
+  ])
+});
+```
+
+
+
+```ts
+get aliases() {
+  return this.profileForm.get('aliases') as FormArray;
+}
+```
+
+```ts
+addAlias() {
+  this.aliases.push(this.fb.control(''));
+}
+```
+
+#### display in the template
+
+```html
+<div formArrayName="aliases">
+  <h3>Aliases</h3> <button (click)="addAlias()">Add Alias</button>
+
+  <div *ngFor="let alias of aliases.controls; let i=index">
+    <!-- The repeated alias template -->
+    <label>
+      Alias:
+      <input type="text" [formControlName]="i">
+    </label>
+  </div>
+</div>
+```
+
+Each time a new alias instance is added, the new form array instance is provided its control based on the index. This allows you to track each individual control when calculating the status and value of the root control.
 
 
 
@@ -1437,8 +1502,6 @@ double shift => search everywhere
 
 In Angualr, it uses `directives` to change the default behaviors of html tags.
 
-
-
 In Angualr, you need to take advantage of decoraters(@) to configure your application. Some component level metadata is configured via `@Component`. The most important `@NgModule` decorator annotates the top-level **AppModule** class.
 
 > Angular needs to know how the pieces of your application fit together and what other files and libraries the app requires. This information is called *metadata*.
@@ -1451,7 +1514,15 @@ Decoraters are used to inform Angular of what part of this `class` belongs to.
 
 
 
-[How to use @ViewChild](https://medium.com/javascript-in-plain-english/viewchild-and-viewchildren-in-angular-6dc0934d2cf9)
+## [How to use @ViewChild](https://medium.com/javascript-in-plain-english/viewchild-and-viewchildren-in-angular-6dc0934d2cf9)
+
+
+
+[All things you should know about @ViewChild](https://blog.angular-university.io/angular-viewchild/)
+
+## RxJS Operators: `of` vs `from`
+
+From my understanding, `from` will convert the behavior while `of` just wraps the value. For example, `from` wraps an Array, say `[1,2,3]`, which will emit the value from the array one by one; by contrast, `of` will return the whole array as **a** value once. For reference: [of vs from operator](https://stackoverflow.com/questions/42704552/of-vs-from-operator)
 
 ## Detection Algorithm
 
@@ -1605,9 +1676,13 @@ Component CSS styles are encapsulated into the component's view and don't affect
 
 ## Multiple API calls as `Promise.all()`
 
+In RxJs, there are two methods to combine several observables.
+
 In RxJS, use `combineLatest(params: Observable[]).pipe([value1, value2...])`
 
+Not only does `forkJoin` require all input observables to be completed, but it also returns an observable that produces a single value that is an array of the last values produced by the input observables. In other words, it waits until the last input observable completes, and then produces a single value and completes.
 
+In contrast, `combineLatest` returns an Observable that produces a new value every time the input observables do, once all input observables have produced at least one value. This means it could have infinite values and may not complete. It also means that the input observables don't have to complete before producing a value.
 
 ## Order your API calls
 

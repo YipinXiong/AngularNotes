@@ -1407,7 +1407,114 @@ In short, `T` indicates more information than `any`. For the first version, Type
 
 
 
+## Index Types (keyof Usage)
 
+With index types, you can get the compiler to check code that uses dynamic property names. For example, a common JavaScript pattern is to pick a subset of properties from an object:
+
+```js
+function pluck(o, propertyNames) {
+    return propertyNames.map(n => o[n]);
+}
+```
+
+Here’s how you would write and use this function in TypeScript, using the **index type query** and **indexed access** operators:
+
+```ts
+function pluck<T, K extends keyof T>(o: T, propertyNames: K[]): T[K][] {
+  return propertyNames.map(n => o[n]);
+}
+
+interface Car {
+    manufacturer: string;
+    model: string;
+    year: number;
+}
+let taxi: Car = {
+    manufacturer: 'Toyota',
+    model: 'Camry',
+    year: 2014
+};
+
+// Manufacturer and model are both of type string,
+// so we can pluck them both into a typed string array
+let makeAndModel: string[] = pluck(taxi, ['manufacturer', 'model']);
+
+// If we try to pluck model and year, we get an
+// array of a union type: (string | number)[]
+let modelYear = pluck(taxi, ['model', 'year'])
+```
+
+The compiler checks that `manufacturer` and `model` are actually properties on `Car`. The example introduces a couple of new type operators. First is `keyof T`, the **index type query operator**. For any type `T`, `keyof T` is the union of known, public property names of `T`. For example:
+
+```ts
+let carProps: keyof Car; // the union of ('manufacturer' | 'model' | 'year')
+```
+
+`keyof Car` is completely interchangeable with `'manufacturer' | 'model' | 'year'`. The difference is that if you add another property to `Car`, say `ownersAddress: string`, then `keyof Car` will automatically update to be `'manufacturer' | 'model' | 'year' | 'ownersAddress'`. And you can use `keyof` in generic contexts like `pluck`, where you can’t possibly know the property names ahead of time. That means the compiler will check that you pass the right set of property names to `pluck`:
+
+```ts
+// error, 'unknown' is not in 'manufacturer' | 'model' | 'year'
+pluck(taxi, ['year', 'unknown']); /
+```
+
+The second operator is `T[K]`, the **indexed access operator**. Here, the type syntax reflects the expression syntax. That means that `person['name']` has the type `Person['name']` — which in our example is just `string`. However, just like index type queries, you can use `T[K]` in a generic context, which is where its real power comes to life. You just have to make sure that the type variable `K extends keyof T`. Here’s another example with a function named `getProperty`.
+
+```ts
+function getProperty<T, K extends keyof T>(o: T, propertyName: K): T[K] {
+    return o[propertyName]; // o[propertyName] is of type T[K]
+}
+```
+
+In `getProperty`, `o: T` and `propertyName: K`, so that means `o[propertyName]: T[K]`. Once you return the `T[K]` result, the compiler will instantiate the actual type of the key, so the return type of `getProperty` will vary according to which property you request.
+
+```ts
+let name: string = getProperty(taxi, 'manufacturer');
+let year: number = getProperty(taxi, 'year');
+
+// error, 'unknown' is not in 'manufacturer' | 'model' | 'year'
+let unknown = getProperty(taxi, 'unknown');
+```
+
+## Index types and index signatures
+
+`keyof` and `T[K]` interact with index signatures. An index signature parameter type must be ‘string’ or ‘number’. If you have a type with a string index signature, `keyof T` will be `string | number` (and not just `string`, since in JavaScript you can access an object property either by using strings (`object['42'`]) or numbers (`object[42]`)). And `T[string]` is just the type of the index signature:
+
+```ts
+interface Dictionary<T> {
+    [key: string]: T;
+}
+let keys: keyof Dictionary<number>; // string | number
+let value: Dictionary<number>['foo']; // number
+```
+
+If you have a type with a number index signature, `keyof T` will just be `number`.
+
+```ts
+interface Dictionary<T> {
+    [key: number]: T;
+}
+let keys: keyof Dictionary<number>; // number
+let value: Dictionary<number>['foo']; // Error, Property 'foo' does not exist on type 'Dictionary<number>'.
+let value: Dictionary<number>[42]; // number
+```
+
+## Define an existing entry in an interface while the name of it varies or doesn't matter.
+
+The easiest method is to just use a type assertion:
+
+```ts
+let mySquare = createSquare({ width: 100, opacity: 0.5 } as SquareConfig);
+```
+
+However, a better approach might be to add a string index signature if you’re sure that the object can have some extra properties that are used in some special way. If `SquareConfig` can have `color` and `width` properties with the above types, but could *also* have any number of other properties, then we could define it like so:
+
+```ts
+interface SquareConfig {
+    color?: string;
+    width?: number;
+    [propName: string]: any;
+}
+```
 
 # RxJS
 
@@ -1748,3 +1855,8 @@ Usages:
 ## How to make a responsive YouTube Video
 
 [Reponsive YouTube Video](https://avexdesigns.com/responsive-youtube-embed/)
+
+## How to build a real time search in Angular
+
+[Demo of buidling search and debounce and do not forget to unsubscribe observables](https://alligator.io/angular/real-time-search-angular-rxjs/)
+
